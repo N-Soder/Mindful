@@ -52,6 +52,18 @@ class RestrictionManager(
         restrictionGroupsMap: HashMap<Int, RestrictionGroup>?,
     ) {
         appsRestrictionsMap?.let {
+            /// FORK: Drop any granted window whose cooldown config just changed.
+            /// Otherwise editing the settings appears to do nothing until the window
+            /// from the previous config expires — e.g. shortening 2 min to 30 s leaves
+            /// the old 2 min grant running, which reads as the gate being broken.
+            it.forEach { (packageName, newRestriction) ->
+                val old = appsRestrictions[packageName]
+                val changed = old == null ||
+                        old.cooldownBreathSec != newRestriction.cooldownBreathSec ||
+                        old.cooldownWindowSec != newRestriction.cooldownWindowSec
+                if (changed) CooldownStore.clearWindow(context, packageName)
+            }
+
             appsRestrictions = it
             alreadyRestrictedApps.clear()
             Log.d(TAG, "updateRestrictions: Apps restrictions updated")

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ FORK: Material You for the native overlays (dark theme, API 31+).
+  ~
+  ~ Dark theme wants a light accent, so these sit at the low end of the tone scale
+  ~ (0 = lightest, 1000 = darkest) — the mirror of values-v31/colors.xml.
+  ~
+  ~ The accent/secondaryContainer pairing matters: the cooldown gate's primary button is
+  ~ an accent-filled pill with secondaryContainer text, so the two must stay on opposite
+  ~ ends of the scale or the label stops being readable.
+  -->
+<resources>
+    <color name="accent">@android:color/system_accent1_200</color>
+    <color name="textPrimary">@android:color/system_neutral1_50</color>
+    <color name="textSecondary">@android:color/system_neutral2_200</color>
+    <color name="surface">@android:color/system_neutral1_900</color>
+    <color name="primaryContainer">@android:color/system_accent1_700</color>
+    <color name="secondaryContainer">@android:color/system_accent2_800</color>
+    <color name="tertiaryContainer">@android:color/system_accent3_800</color>
+</resources>

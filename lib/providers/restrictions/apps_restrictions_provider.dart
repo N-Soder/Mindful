@@ -252,7 +252,13 @@ class AppsRestrictionsNotifier
               (e.timerSec > 0 ||
                   e.launchLimit > 0 ||
                   e.periodDurationInMins > 0 ||
-                  e.associatedGroupId != null),
+                  e.associatedGroupId != null ||
+                  // FORK: without this a cooldown-only restriction is dropped here
+                  // and never reaches the tracker service. Worse, the native
+                  // RestrictionManager then sees an empty map, reports isIdle, and
+                  // stopIfNoUsage() shuts the service down — so the gate fires once
+                  // and never again.
+                  e.cooldownBreathSec > 0),
         )
         .toList();
 

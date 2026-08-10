@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ FORK: Material You for the native overlays (light theme, API 31+).
+  ~
+  ~ The Flutter UI gets dynamic colour from the dynamic_color package, but the native
+  ~ overlays were hardcoded hex, so they ignored the wallpaper palette the rest of the
+  ~ app follows. Remapping the same role names to Android's system tones fixes every
+  ~ native overlay at once, with no Kotlin or layout changes.
+  ~
+  ~ Tone scale runs 0 (lightest) to 1000 (darkest), so a light theme wants a dark accent
+  ~ and vice versa. See values-night-v31/colors.xml for the dark counterpart.
+  -->
+<resources>
+    <color name="accent">@android:color/system_accent1_600</color>
+    <color name="textPrimary">@android:color/system_neutral1_900</color>
+    <color name="textSecondary">@android:color/system_neutral2_700</color>
+    <color name="surface">@android:color/system_neutral1_10</color>
+    <color name="primaryContainer">@android:color/system_accent1_100</color>
+    <color name="secondaryContainer">@android:color/system_accent2_100</color>
+    <color name="tertiaryContainer">@android:color/system_accent3_100</color>
+</resources>

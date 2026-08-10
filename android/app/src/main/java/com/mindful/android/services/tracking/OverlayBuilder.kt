@@ -22,11 +22,26 @@ import com.mindful.android.utils.MindfulQuotes
 import com.mindful.android.utils.ThreadUtils
 
 object OverlayBuilder {
-    /** FORK: How far the breathing circle expands on the inhale. */
-    private const val INHALE_SCALE = 1.35f
+    /** FORK: Scale the breathing circle starts (and returns to) on the exhale. */
+    private const val EXHALE_SCALE = 0.72f
+
+    /** FORK: Scale the breathing circle reaches at the peak of the inhale. */
+    private const val INHALE_SCALE = 1.8f
+
+    /** FORK: Circle opacity at rest and at the peak of the inhale. */
+    private const val EXHALE_ALPHA = 0.22f
+    private const val INHALE_ALPHA = 0.55f
 
     /** FORK: Duration of the breath → info cross-fade, in millis. */
     private const val CROSSFADE_MS = 450L
+
+    /**
+     * FORK: Delay before the breath starts, matching the window's own fade-in.
+     *
+     * Without it the circle's scale animation runs at the same time as the overlay
+     * fading in, and the two competing animations are visibly rough on the first frames.
+     */
+    private const val BREATH_START_DELAY_MS = 260L
 
     @MainThread
     fun buildToastOverlay(
@@ -158,22 +173,40 @@ object OverlayBuilder {
         val totalMs = (breathSec.coerceAtLeast(1)) * 1000L
         val halfMs = totalMs / 2
 
+        // Promote to a hardware layer for the duration of the breath. Without this the
+        // circle's background drawable is re-rasterized on every frame as it scales,
+        // which is what makes a large slow scale look rough. On a hardware layer the
+        // GPU just transforms a cached texture, so scale and alpha are near-free.
+        circle.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        // Start small so the growth is pronounced rather than a subtle throb
+        circle.scaleX = EXHALE_SCALE
+        circle.scaleY = EXHALE_SCALE
+        circle.alpha = EXHALE_ALPHA
+
+        // Ease in and out at both ends — a linear scale reads as mechanical, and the
+        // pause at each extreme is what makes it feel like breathing.
         val interpolator = AccelerateDecelerateInterpolator()
 
         // Inhale
         circle.animate()
             .scaleX(INHALE_SCALE).scaleY(INHALE_SCALE)
-            .alpha(0.5f)
+            .alpha(INHALE_ALPHA)
             .setInterpolator(interpolator)
+            .setStartDelay(BREATH_START_DELAY_MS)
             .setDuration(halfMs)
             .withEndAction {
                 // Exhale
                 circle.animate()
-                    .scaleX(1f).scaleY(1f)
-                    .alpha(0.28f)
+                    .scaleX(EXHALE_SCALE).scaleY(EXHALE_SCALE)
+                    .alpha(EXHALE_ALPHA)
                     .setInterpolator(interpolator)
+                    .setStartDelay(0)
                     .setDuration(halfMs)
                     .withEndAction {
+                        // Release the layer once there's nothing left to animate
+                        circle.setLayerType(View.LAYER_TYPE_NONE, null)
+
                         // Cross-fade to the info phase
                         infoPanel.visibility = View.VISIBLE
                         infoPanel.animate().alpha(1f).setDuration(CROSSFADE_MS).start()

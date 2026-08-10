@@ -21,12 +21,16 @@
         android:layout_height="match_parent">
 
         <!-- The breathing circle. Scaled by ObjectAnimator; sits behind the text. -->
+        <!--
+          ~ Base size is scaled between EXHALE_SCALE and INHALE_SCALE in OverlayBuilder,
+          ~ so at the peak of the inhale this reaches roughly 360dp.
+          -->
         <View
             android:id="@+id/cooldown_breath_circle"
-            android:layout_width="220dp"
-            android:layout_height="220dp"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
             android:layout_gravity="center"
-            android:alpha="0.28"
+            android:alpha="0.22"
             android:background="@drawable/shape_circular"
             android:backgroundTint="@color/accent" />
 
