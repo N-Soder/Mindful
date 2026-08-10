@@ -22,4 +22,13 @@ data class RestrictionState(
 
     /** The type of reminder to show during app usage **/
     val reminderType: ReminderType = ReminderType.NONE,
+
+    /** FORK: Length of the breathing pause for a [RestrictionType.COOLDOWN] state, in seconds **/
+    val cooldownBreathSec: Int = 0,
+
+    /** FORK: How many times this app was opened in the trailing 24 hours **/
+    val launchAttempts24h: Int = -1,
+
+    /** FORK: Epoch millis this app was last used, or -1 if never / unknown **/
+    val lastUsedMillis: Long = -1L,
 )

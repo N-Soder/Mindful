@@ -5,6 +5,8 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
 import com.mindful.android.enums.RestrictionType
+import com.mindful.android.helpers.storage.CooldownStore
+import com.mindful.android.helpers.usages.CooldownUsageHelper
 import com.mindful.android.helpers.usages.ScreenUsageHelper
 import com.mindful.android.models.AppRestriction
 import com.mindful.android.models.RestrictionGroup
@@ -104,6 +106,14 @@ class RestrictionManager(
         /// Evaluate screen time
         evaluateScreenTimeLimit(restriction, futureStates)?.let { return it }
 
+        /// FORK: Evaluate the cooldown gate.
+        /// Deliberately after the hard blocks above — if the app is already blocked
+        /// outright there is nothing to deliberate about. Deliberately *before* the
+        /// futureStates return so the gate takes precedence over reminder scheduling
+        /// for this launch; once the user continues, the launch event is re-invoked and
+        /// the reminder path runs normally.
+        evaluateCooldown(restriction)?.let { return it }
+
         /// Return the nearest expiration
         if (futureStates.isNotEmpty()) {
             val nearestFutureState = futureStates.minBy { it.timeLeftMillis }
@@ -179,6 +189,51 @@ class RestrictionManager(
         }
 
         return null
+    }
+
+    /**
+     * FORK: Decides whether the cooldown gate should fire for this launch.
+     *
+     * Returns a [RestrictionType.COOLDOWN] state (with `timeLeftMillis` left at its -1
+     * default, so [MindfulTrackerService] routes it to the overlay rather than to
+     * reminder scheduling), or null when the app should simply open.
+     */
+    private fun evaluateCooldown(restriction: AppRestriction): RestrictionState? {
+        // Not configured for this app
+        if (restriction.cooldownBreathSec <= 0) return null
+
+        val packageName = restriction.appPackage
+
+        // User already chose to continue recently — let them straight in
+        if (CooldownStore.isWithinGrantedWindow(context, packageName)) {
+            Log.d(TAG, "evaluateCooldown: $packageName within granted window, skipping gate")
+            return null
+        }
+
+        // Only counted when the gate actually fires, so app-switching inside a granted
+        // window doesn't inflate the number the user is shown.
+        val attempts = CooldownStore.recordAttemptAndCount(context, packageName)
+        val lastUsed = CooldownUsageHelper.fetchLastUsedMillis(usageStatsManager, packageName)
+        val screenTimeTodaySec =
+            ScreenUsageHelper.fetchAppUsageTodayTillNow(usageStatsManager)[packageName] ?: 0L
+
+        Log.d(TAG, "evaluateCooldown: Gating $packageName (attempts=$attempts)")
+        return RestrictionState(
+            type = RestrictionType.COOLDOWN,
+            cooldownBreathSec = restriction.cooldownBreathSec,
+            launchAttempts24h = attempts,
+            lastUsedMillis = lastUsed,
+            screenTimeUsed = screenTimeTodaySec,
+        )
+    }
+
+    /**
+     * FORK: Called when the user chooses to continue into an app from the cooldown
+     * overlay. Keeps the app open-able for the configured window.
+     */
+    fun grantCooldownWindow(packageName: String) {
+        val windowSec = appsRestrictions[packageName]?.cooldownWindowSec ?: 120
+        CooldownStore.grantWindow(context, packageName, windowSec)
     }
 
     private fun evaluateScreenTimeLimit(

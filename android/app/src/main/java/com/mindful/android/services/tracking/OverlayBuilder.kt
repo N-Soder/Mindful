@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -21,6 +22,12 @@ import com.mindful.android.utils.MindfulQuotes
 import com.mindful.android.utils.ThreadUtils
 
 object OverlayBuilder {
+    /** FORK: How far the breathing circle expands on the inhale. */
+    private const val INHALE_SCALE = 1.35f
+
+    /** FORK: Duration of the breath → info cross-fade, in millis. */
+    private const val CROSSFADE_MS = 450L
+
     @MainThread
     fun buildToastOverlay(
         context: Context,
@@ -62,6 +69,123 @@ object OverlayBuilder {
         }
 
         return toastView
+    }
+
+    /**
+     * FORK: Builds the cooldown gate overlay.
+     *
+     * Runs in two phases inside a single view so the hand-off is a cross-fade rather than
+     * a window teardown: a breathing pause, then usage context plus the choice to
+     * continue or back out.
+     *
+     * @param onBackOut  User decided not to open the app.
+     * @param onContinue User chose to go in anyway.
+     */
+    @MainThread
+    fun buildCooldownOverlay(
+        context: Context,
+        packageName: String,
+        state: RestrictionState,
+        onBackOut: () -> Unit,
+        onContinue: () -> Unit,
+    ): View {
+        val inflater = LayoutInflater.from(context)
+        val root = inflater.inflate(R.layout.overlay_cooldown_layout, null)
+
+        val (appName, _) = getAppLabelAndIcon(context, packageName)
+
+        // ---- Phase 2 content, populated up front so it's ready to fade in ----
+        root.findViewById<TextView>(R.id.cooldown_attempts_count).text =
+            state.launchAttempts24h.coerceAtLeast(1).toString()
+
+        root.findViewById<TextView>(R.id.cooldown_attempts_label).text =
+            context.getString(R.string.cooldown_attempts_label, appName)
+
+        // Minutes on the app so far today
+        val screenTimeTxt = root.findViewById<TextView>(R.id.cooldown_screen_time_today)
+        if (state.screenTimeUsed > 0) {
+            val usedMins = (state.screenTimeUsed / 60).toInt()
+            screenTimeTxt.text = context.getString(
+                R.string.cooldown_screen_time_today,
+                DateTimeUtils.minutesToTimeStr(usedMins)
+            )
+        } else {
+            screenTimeTxt.visibility = View.GONE
+        }
+
+        // How long since the previous session ended
+        val lastUseTxt = root.findViewById<TextView>(R.id.cooldown_last_use)
+        if (state.lastUsedMillis > 0) {
+            val elapsedMins =
+                ((System.currentTimeMillis() - state.lastUsedMillis) / 60_000L).toInt()
+            lastUseTxt.text = context.getString(
+                R.string.cooldown_last_use,
+                DateTimeUtils.minutesToTimeStr(elapsedMins.coerceAtLeast(1))
+            )
+        } else {
+            lastUseTxt.text = context.getString(R.string.cooldown_last_use_unknown)
+        }
+
+        // ---- Actions ----
+        val backOutBtn = root.findViewById<Button>(R.id.cooldown_btn_dismiss)
+        backOutBtn.text = context.getString(R.string.cooldown_btn_dismiss, appName)
+        backOutBtn.setOnClickListener { ThreadUtils.runOnMainThread { onBackOut.invoke() } }
+
+        val continueBtn = root.findViewById<Button>(R.id.cooldown_btn_continue)
+        continueBtn.text = context.getString(R.string.cooldown_btn_continue, appName)
+        continueBtn.setOnClickListener { ThreadUtils.runOnMainThread { onContinue.invoke() } }
+
+        // ---- Phase 1: breathe, then reveal ----
+        // Posted so the animation starts after the view has been laid out.
+        root.post { animateBreathThenReveal(root, state.cooldownBreathSec) }
+
+        return root
+    }
+
+    /**
+     * FORK: One slow breath — expand on the inhale, contract on the exhale — spanning
+     * [breathSec], then cross-fades the info panel in.
+     *
+     * A single cycle scaled to the configured duration, rather than a loop, so it reads
+     * as a deliberate pause instead of a fidgeting animation.
+     */
+    private fun animateBreathThenReveal(root: View, breathSec: Int) {
+        val breathPanel = root.findViewById<View>(R.id.cooldown_breath_panel)
+        val circle = root.findViewById<View>(R.id.cooldown_breath_circle)
+        val infoPanel = root.findViewById<View>(R.id.cooldown_info_panel)
+
+        // Guard against a zero/negative configured duration reaching the animator
+        val totalMs = (breathSec.coerceAtLeast(1)) * 1000L
+        val halfMs = totalMs / 2
+
+        val interpolator = AccelerateDecelerateInterpolator()
+
+        // Inhale
+        circle.animate()
+            .scaleX(INHALE_SCALE).scaleY(INHALE_SCALE)
+            .alpha(0.5f)
+            .setInterpolator(interpolator)
+            .setDuration(halfMs)
+            .withEndAction {
+                // Exhale
+                circle.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .alpha(0.28f)
+                    .setInterpolator(interpolator)
+                    .setDuration(halfMs)
+                    .withEndAction {
+                        // Cross-fade to the info phase
+                        infoPanel.visibility = View.VISIBLE
+                        infoPanel.animate().alpha(1f).setDuration(CROSSFADE_MS).start()
+                        breathPanel.animate()
+                            .alpha(0f)
+                            .setDuration(CROSSFADE_MS)
+                            .withEndAction { breathPanel.visibility = View.GONE }
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
     }
 
     @MainThread
@@ -130,6 +254,9 @@ object OverlayBuilder {
                 RestrictionType.APP_ACTIVE_PERIOD -> R.string.app_paused_restriction_app_active_period
                 RestrictionType.GROUP_TIMER -> R.string.app_paused_restriction_group_timer
                 RestrictionType.GROUP_ACTIVE_PERIOD -> R.string.app_paused_restriction_group_active_period
+                // FORK: Cooldown states are rendered by buildCooldownOverlay, never here,
+                // but the branch is required for exhaustiveness.
+                RestrictionType.COOLDOWN -> R.string.app_paused_restriction_cooldown
             }
         )
 
@@ -259,6 +386,10 @@ object OverlayBuilder {
                     R.string.app_paused_reason_group_active_period_over,
                     state.groupName
                 )
+
+            // FORK: Cooldown has its own overlay and writes its own copy, so this is
+            // unreachable — present only to keep the `when` exhaustive.
+            RestrictionType.COOLDOWN -> ""
         }
     }
 }

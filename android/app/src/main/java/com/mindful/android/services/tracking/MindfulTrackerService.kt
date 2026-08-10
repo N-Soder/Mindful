@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.annotation.WorkerThread
 import com.mindful.android.AppConstants
 import com.mindful.android.R
+import com.mindful.android.enums.RestrictionType
 import com.mindful.android.generics.ServiceBinder
 import com.mindful.android.helpers.device.NotificationHelper
 import com.mindful.android.helpers.storage.SharedPrefsHelper
@@ -87,8 +88,30 @@ class MindfulTrackerService : Service() {
             Log.d(TAG, "onNewAppLaunch: $packageName's evaluated state => $currentOrFutureState")
 
             currentOrFutureState?.let {
+                /// FORK: Cooldown gate — a pause with a choice, not a block
+                if (it.type == RestrictionType.COOLDOWN) {
+                    overlayManager.showCooldownOverlay(
+                        packageName = packageName,
+                        restrictionState = it,
+                        onBackOut = {
+                            /// Same approach as the block overlay's "Close app" button
+                            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                                addCategory(Intent.CATEGORY_HOME)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            applicationContext.startActivity(homeIntent)
+                        },
+                        onContinue = {
+                            restrictionManager.grantCooldownWindow(packageName)
+                            /// Re-evaluate now that the window is granted. The gate will
+                            /// be skipped, so any app timer reminders that the gate
+                            /// pre-empted get scheduled as normal.
+                            launchTrackingManager.reInvokeLastLaunchEvent()
+                        },
+                    )
+                }
                 /// Already restricted
-                if (it.timeLeftMillis <= 0L) {
+                else if (it.timeLeftMillis <= 0L) {
                     overlayManager.showSheetOverlay(
                         packageName = packageName,
                         restrictionState = it,

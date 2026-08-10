@@ -77,4 +77,14 @@
 
     <string name="notification_schedule_batch_title">Unread notifications</string>
     <string name="notification_schedule_batch_summery" comment="Number of notifications as placeholder" formatted="true">You have %d unread notifications while you were away. They’ll be marked as read after 24 hours.</string>
+
+    <!-- FORK: Cooldown gate -->
+    <string name="cooldown_breath_prompt">It\'s time to take a deep breath…</string>
+    <string name="app_paused_restriction_cooldown">Cooldown</string>
+    <string name="cooldown_attempts_label" comment="App name as placeholder. ex: 'attempts to open Instagram within the last 24 hours.'" formatted="true">attempts to open %s within the last 24 hours.</string>
+    <string name="cooldown_screen_time_today" comment="Duration as placeholder. ex: 'On it for 1h 20m today'" formatted="true">On it for %s today</string>
+    <string name="cooldown_last_use" comment="Relative duration as placeholder. ex: 'Last use: 7 hours ago'" formatted="true">Last use: %s ago</string>
+    <string name="cooldown_last_use_unknown">First use in a while</string>
+    <string name="cooldown_btn_dismiss" comment="App name as placeholder. ex: 'I don\'t want to open Instagram'" formatted="true">I don\'t want to open %s</string>
+    <string name="cooldown_btn_continue" comment="App name as placeholder. ex: 'Continue to Instagram'" formatted="true">Continue to %s</string>
 </resources>

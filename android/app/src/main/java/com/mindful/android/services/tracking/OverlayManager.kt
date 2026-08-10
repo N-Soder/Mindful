@@ -49,6 +49,18 @@ class OverlayManager(
                 val quote = sheetOverlay.findViewById<View>(R.id.overlay_sheet_quote_panel)
                 val sheet = sheetOverlay.findViewById<LinearLayout>(R.id.overlay_sheet)
 
+                // FORK: The cooldown gate uses a different layout that has none of the
+                // views above, so dismissing it here would NPE. Fall back to a plain
+                // fade-out for any overlay that isn't the block sheet.
+                if (bg == null || quote == null || sheet == null) {
+                    sheetOverlay.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction { runCatching { windowManager.removeView(sheetOverlay) } }
+                        .start()
+                    return@runOnMainThread
+                }
+
                 // Animate
                 bg.animate().alpha(0f).setDuration(400).start()
                 quote.animate().alpha(0f).setDuration(400).start()
@@ -60,6 +72,64 @@ class OverlayManager(
                         windowManager.removeView(sheetOverlay)
                     }
                     .start()
+            }
+        }
+    }
+
+    /**
+     * FORK: Shows the cooldown gate for [packageName].
+     *
+     * Reuses [sheetLayoutParams] and the same single-overlay bookkeeping as the block
+     * overlay, so the two can never be on screen at once.
+     *
+     * @param onBackOut  User decided not to open the app.
+     * @param onContinue User chose to continue in; the overlay is removed first.
+     */
+    fun showCooldownOverlay(
+        packageName: String,
+        restrictionState: RestrictionState,
+        onBackOut: () -> Unit,
+        onContinue: () -> Unit,
+    ) {
+        // Return if an overlay is already showing
+        if (overlays.isNotEmpty()) return
+
+        ThreadUtils.runOnMainThread {
+            runCatching {
+                if (!haveOverlayPermission(context)) {
+                    return@runOnMainThread
+                }
+
+                val cooldownOverlay = OverlayBuilder.buildCooldownOverlay(
+                    context = context,
+                    packageName = packageName,
+                    state = restrictionState,
+                    onBackOut = {
+                        dismissSheetOverlay()
+                        onBackOut.invoke()
+                    },
+                    onContinue = {
+                        dismissSheetOverlay()
+                        onContinue.invoke()
+                    },
+                ).apply {
+                    systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                }
+
+                Log.d(TAG, "showCooldownOverlay: Showing cooldown gate for $packageName")
+                cooldownOverlay.also {
+                    windowManager.addView(it, sheetLayoutParams)
+                    overlays.push(it)
+                    Utils.vibrateDevice(context, 50L)
+
+                    // Fade the whole gate in; the breathing animation starts itself
+                    it.alpha = 0f
+                    it.animate().alpha(1f).setDuration(400).start()
+                }
+            }.getOrElse {
+                SharedPrefsHelper.insertCrashLogToPrefs(context, it)
             }
         }
     }
