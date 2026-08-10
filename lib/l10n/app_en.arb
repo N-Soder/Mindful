@@ -612,5 +612,30 @@
     "write_email_tile_subtitle": "You will be redirected to Email app.",
     "privacy_policy_heading": "Privacy policy",
     "privacy_policy_info": "Mindful is committed to protecting your privacy. We do not collect, store, or transfer any type of user data. The app operates entirely offline and does not require an internet connection, ensuring that your personal information remains private and secure on your device. As a Free and Open Source Software (FOSS) application, Mindful guarantees complete transparency and user control over their data.",
-    "more_details_button": "More details"
+    "more_details_button": "More details",
+    "cooldown_tile_title": "Cooldown gate",
+    "cooldown_tile_subtitle": "Pause and breathe before this app opens, then decide.",
+    "cooldown_dialog_title": "Breathing pause",
+    "cooldown_dialog_info": "How long to breathe before this app opens. You'll then see how often you've reached for it, and can continue or back out.",
+    "cooldown_window_tile_title": "Stay open for",
+    "cooldown_window_tile_subtitle": "After continuing, how long before the gate returns.",
+    "cooldown_status_off": "Off",
+    "cooldown_seconds_label": "{count, plural, =1{1 second} other{{count} seconds}}",
+    "@cooldown_seconds_label": {
+        "placeholders": {
+            "count": {
+                "type": "num",
+                "format": "compact"
+            }
+        }
+    },
+    "cooldown_minutes_label": "{count, plural, =1{1 minute} other{{count} minutes}}",
+    "@cooldown_minutes_label": {
+        "placeholders": {
+            "count": {
+                "type": "num",
+                "format": "compact"
+            }
+        }
+    }
 }

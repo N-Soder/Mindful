@@ -2693,6 +2693,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More details'**
   String get more_details_button;
+
+  /// No description provided for @cooldown_tile_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooldown gate'**
+  String get cooldown_tile_title;
+
+  /// No description provided for @cooldown_tile_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause and breathe before this app opens, then decide.'**
+  String get cooldown_tile_subtitle;
+
+  /// No description provided for @cooldown_dialog_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Breathing pause'**
+  String get cooldown_dialog_title;
+
+  /// No description provided for @cooldown_dialog_info.
+  ///
+  /// In en, this message translates to:
+  /// **'How long to breathe before this app opens. You\'ll then see how often you\'ve reached for it, and can continue or back out.'**
+  String get cooldown_dialog_info;
+
+  /// No description provided for @cooldown_window_tile_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay open for'**
+  String get cooldown_window_tile_title;
+
+  /// No description provided for @cooldown_window_tile_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'After continuing, how long before the gate returns.'**
+  String get cooldown_window_tile_subtitle;
+
+  /// No description provided for @cooldown_status_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get cooldown_status_off;
+
+  /// No description provided for @cooldown_seconds_label.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 second} other{{count} seconds}}'**
+  String cooldown_seconds_label(num count);
+
+  /// No description provided for @cooldown_minutes_label.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute} other{{count} minutes}}'**
+  String cooldown_minutes_label(num count);
 }
 
 class _AppLocalizationsDelegate

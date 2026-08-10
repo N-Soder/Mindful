@@ -1523,4 +1523,60 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get more_details_button => 'More details';
+
+  @override
+  String get cooldown_tile_title => 'Cooldown gate';
+
+  @override
+  String get cooldown_tile_subtitle =>
+      'Pause and breathe before this app opens, then decide.';
+
+  @override
+  String get cooldown_dialog_title => 'Breathing pause';
+
+  @override
+  String get cooldown_dialog_info =>
+      'How long to breathe before this app opens. You\'ll then see how often you\'ve reached for it, and can continue or back out.';
+
+  @override
+  String get cooldown_window_tile_title => 'Stay open for';
+
+  @override
+  String get cooldown_window_tile_subtitle =>
+      'After continuing, how long before the gate returns.';
+
+  @override
+  String get cooldown_status_off => 'Off';
+
+  @override
+  String cooldown_seconds_label(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString seconds',
+      one: '1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cooldown_minutes_label(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
 }

@@ -90,6 +90,40 @@ class AppsRestrictionsNotifier
     _updateStateDbAndServices(appPackage, restriction);
   }
 
+  /// FORK: Updates the cooldown breathing pause for a specific app package.
+  ///
+  /// Passing 0 turns the gate off for that app. The granted window is left alone,
+  /// so switching the gate off and on again keeps whatever window was configured.
+  ///
+  /// Anyway updated the platform-specific service.
+  Future<void> updateAppCooldown(String appPackage, int breathSec) async {
+    final restriction =
+        state[appPackage]?.copyWith(cooldownBreathSec: breathSec) ??
+            defaultAppRestrictionModel.copyWith(
+              appPackage: appPackage,
+              cooldownBreathSec: breathSec,
+            );
+
+    /// Update database and state
+    _updateStateDbAndServices(appPackage, restriction);
+  }
+
+  /// FORK: Updates how long an app stays open-able after choosing to continue
+  /// past the cooldown gate.
+  ///
+  /// Anyway updated the platform-specific service.
+  Future<void> updateAppCooldownWindow(String appPackage, int windowSec) async {
+    final restriction =
+        state[appPackage]?.copyWith(cooldownWindowSec: windowSec) ??
+            defaultAppRestrictionModel.copyWith(
+              appPackage: appPackage,
+              cooldownWindowSec: windowSec,
+            );
+
+    /// Update database and state
+    _updateStateDbAndServices(appPackage, restriction);
+  }
+
   /// Updates the active period time for a specific app package.
   ///
   /// Anyway updated the platform-specific service.

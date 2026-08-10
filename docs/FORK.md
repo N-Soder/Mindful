@@ -72,6 +72,28 @@ it: **Settings → Apps → Mindful → ⋮ → Allow restricted settings**. Opt
 `LaunchTrackingManager` falls back to polling `UsageStatsManager` every 750 ms — but
 accessibility makes launch detection instant.
 
+## Drift migrations: two traps
+
+The 6-step process documented in `app_database.dart` works, but two steps misbehave in
+ways that cost real time.
+
+**1. `schema steps` silently breaks the build.** `lib/core/database/schemas/schema_versions.dart`
+needs five hand-added imports (`dart:convert`, `AppConstants`, `DefaultHomeTab`,
+`ReminderType`, `default_models_utils`) because column defaults in the schema snapshots
+reference project code. `drift_dev` emits only its own imports, so regenerating strips all
+five and produces ~20 undefined-name errors. **Re-add them after every regeneration** —
+there's a comment at the top of the file saying so.
+
+**2. `schema dump` can deadlock.** Seen once sitting at 0% CPU, sleeping, no output, for
+20 minutes. An identical rerun finished in ~3 minutes at 150% CPU. If it hangs, kill and
+retry rather than wait. Don't pipe it through `tail` — that buffers the output and hides
+what it's doing.
+
+Also: editing a `.arb` file does nothing on its own. Run `flutter gen-l10n`.
+
+Fastest feedback loop after a migration is `flutter analyze` (~5 s) rather than a full
+APK build (~1 min).
+
 ## Cooldown implementation
 
 | File | Role |

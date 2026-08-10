@@ -84,6 +84,22 @@ class $AppRestrictionTableTable extends AppRestrictionTable
               defaultValue: Constant(ReminderType.toast.name))
           .withConverter<ReminderType>(
               $AppRestrictionTableTable.$converterreminderType);
+  static const VerificationMeta _cooldownBreathSecMeta =
+      const VerificationMeta('cooldownBreathSec');
+  @override
+  late final GeneratedColumn<int> cooldownBreathSec = GeneratedColumn<int>(
+      'cooldown_breath_sec', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _cooldownWindowSecMeta =
+      const VerificationMeta('cooldownWindowSec');
+  @override
+  late final GeneratedColumn<int> cooldownWindowSec = GeneratedColumn<int>(
+      'cooldown_window_sec', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(120));
   @override
   List<GeneratedColumn> get $columns => [
         appPackage,
@@ -94,7 +110,9 @@ class $AppRestrictionTableTable extends AppRestrictionTable
         periodDurationInMins,
         associatedGroupId,
         canAccessInternet,
-        reminderType
+        reminderType,
+        cooldownBreathSec,
+        cooldownWindowSec
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -142,6 +160,18 @@ class $AppRestrictionTableTable extends AppRestrictionTable
           canAccessInternet.isAcceptableOrUnknown(
               data['can_access_internet']!, _canAccessInternetMeta));
     }
+    if (data.containsKey('cooldown_breath_sec')) {
+      context.handle(
+          _cooldownBreathSecMeta,
+          cooldownBreathSec.isAcceptableOrUnknown(
+              data['cooldown_breath_sec']!, _cooldownBreathSecMeta));
+    }
+    if (data.containsKey('cooldown_window_sec')) {
+      context.handle(
+          _cooldownWindowSecMeta,
+          cooldownWindowSec.isAcceptableOrUnknown(
+              data['cooldown_window_sec']!, _cooldownWindowSecMeta));
+    }
     return context;
   }
 
@@ -172,6 +202,10 @@ class $AppRestrictionTableTable extends AppRestrictionTable
       reminderType: $AppRestrictionTableTable.$converterreminderType.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}reminder_type'])!),
+      cooldownBreathSec: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}cooldown_breath_sec'])!,
+      cooldownWindowSec: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}cooldown_window_sec'])!,
     );
   }
 
@@ -218,6 +252,14 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
 
   /// [ReminderType] Type of reminders to show when using timed app
   final ReminderType reminderType;
+
+  /// FORK: Length of the breathing pause shown before this app opens, in SECONDS.
+  /// Zero disables the cooldown gate for this app.
+  final int cooldownBreathSec;
+
+  /// FORK: How long the app stays open-able after choosing to continue, in SECONDS.
+  /// Stops app-switching from re-triggering the gate constantly.
+  final int cooldownWindowSec;
   const AppRestriction(
       {required this.appPackage,
       required this.timerSec,
@@ -227,7 +269,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       required this.periodDurationInMins,
       this.associatedGroupId,
       required this.canAccessInternet,
-      required this.reminderType});
+      required this.reminderType,
+      required this.cooldownBreathSec,
+      required this.cooldownWindowSec});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -253,6 +297,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       map['reminder_type'] = Variable<String>(
           $AppRestrictionTableTable.$converterreminderType.toSql(reminderType));
     }
+    map['cooldown_breath_sec'] = Variable<int>(cooldownBreathSec);
+    map['cooldown_window_sec'] = Variable<int>(cooldownWindowSec);
     return map;
   }
 
@@ -269,6 +315,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           : Value(associatedGroupId),
       canAccessInternet: Value(canAccessInternet),
       reminderType: Value(reminderType),
+      cooldownBreathSec: Value(cooldownBreathSec),
+      cooldownWindowSec: Value(cooldownWindowSec),
     );
   }
 
@@ -289,6 +337,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       canAccessInternet: serializer.fromJson<bool>(json['canAccessInternet']),
       reminderType: $AppRestrictionTableTable.$converterreminderType
           .fromJson(serializer.fromJson<String>(json['reminderType'])),
+      cooldownBreathSec: serializer.fromJson<int>(json['cooldownBreathSec']),
+      cooldownWindowSec: serializer.fromJson<int>(json['cooldownWindowSec']),
     );
   }
   @override
@@ -310,6 +360,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       'reminderType': serializer.toJson<String>($AppRestrictionTableTable
           .$converterreminderType
           .toJson(reminderType)),
+      'cooldownBreathSec': serializer.toJson<int>(cooldownBreathSec),
+      'cooldownWindowSec': serializer.toJson<int>(cooldownWindowSec),
     };
   }
 
@@ -322,7 +374,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           int? periodDurationInMins,
           Value<int?> associatedGroupId = const Value.absent(),
           bool? canAccessInternet,
-          ReminderType? reminderType}) =>
+          ReminderType? reminderType,
+          int? cooldownBreathSec,
+          int? cooldownWindowSec}) =>
       AppRestriction(
         appPackage: appPackage ?? this.appPackage,
         timerSec: timerSec ?? this.timerSec,
@@ -335,6 +389,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
             : this.associatedGroupId,
         canAccessInternet: canAccessInternet ?? this.canAccessInternet,
         reminderType: reminderType ?? this.reminderType,
+        cooldownBreathSec: cooldownBreathSec ?? this.cooldownBreathSec,
+        cooldownWindowSec: cooldownWindowSec ?? this.cooldownWindowSec,
       );
   AppRestriction copyWithCompanion(AppRestrictionTableCompanion data) {
     return AppRestriction(
@@ -361,6 +417,12 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       reminderType: data.reminderType.present
           ? data.reminderType.value
           : this.reminderType,
+      cooldownBreathSec: data.cooldownBreathSec.present
+          ? data.cooldownBreathSec.value
+          : this.cooldownBreathSec,
+      cooldownWindowSec: data.cooldownWindowSec.present
+          ? data.cooldownWindowSec.value
+          : this.cooldownWindowSec,
     );
   }
 
@@ -375,7 +437,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           ..write('periodDurationInMins: $periodDurationInMins, ')
           ..write('associatedGroupId: $associatedGroupId, ')
           ..write('canAccessInternet: $canAccessInternet, ')
-          ..write('reminderType: $reminderType')
+          ..write('reminderType: $reminderType, ')
+          ..write('cooldownBreathSec: $cooldownBreathSec, ')
+          ..write('cooldownWindowSec: $cooldownWindowSec')
           ..write(')'))
         .toString();
   }
@@ -390,7 +454,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       periodDurationInMins,
       associatedGroupId,
       canAccessInternet,
-      reminderType);
+      reminderType,
+      cooldownBreathSec,
+      cooldownWindowSec);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -403,7 +469,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           other.periodDurationInMins == this.periodDurationInMins &&
           other.associatedGroupId == this.associatedGroupId &&
           other.canAccessInternet == this.canAccessInternet &&
-          other.reminderType == this.reminderType);
+          other.reminderType == this.reminderType &&
+          other.cooldownBreathSec == this.cooldownBreathSec &&
+          other.cooldownWindowSec == this.cooldownWindowSec);
 }
 
 class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
@@ -416,6 +484,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
   final Value<int?> associatedGroupId;
   final Value<bool> canAccessInternet;
   final Value<ReminderType> reminderType;
+  final Value<int> cooldownBreathSec;
+  final Value<int> cooldownWindowSec;
   final Value<int> rowid;
   const AppRestrictionTableCompanion({
     this.appPackage = const Value.absent(),
@@ -427,6 +497,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
     this.associatedGroupId = const Value.absent(),
     this.canAccessInternet = const Value.absent(),
     this.reminderType = const Value.absent(),
+    this.cooldownBreathSec = const Value.absent(),
+    this.cooldownWindowSec = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AppRestrictionTableCompanion.insert({
@@ -439,6 +511,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
     this.associatedGroupId = const Value.absent(),
     this.canAccessInternet = const Value.absent(),
     this.reminderType = const Value.absent(),
+    this.cooldownBreathSec = const Value.absent(),
+    this.cooldownWindowSec = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : appPackage = Value(appPackage);
   static Insertable<AppRestriction> custom({
@@ -451,6 +525,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
     Expression<int>? associatedGroupId,
     Expression<bool>? canAccessInternet,
     Expression<String>? reminderType,
+    Expression<int>? cooldownBreathSec,
+    Expression<int>? cooldownWindowSec,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -464,6 +540,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
       if (associatedGroupId != null) 'associated_group_id': associatedGroupId,
       if (canAccessInternet != null) 'can_access_internet': canAccessInternet,
       if (reminderType != null) 'reminder_type': reminderType,
+      if (cooldownBreathSec != null) 'cooldown_breath_sec': cooldownBreathSec,
+      if (cooldownWindowSec != null) 'cooldown_window_sec': cooldownWindowSec,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -478,6 +556,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
       Value<int?>? associatedGroupId,
       Value<bool>? canAccessInternet,
       Value<ReminderType>? reminderType,
+      Value<int>? cooldownBreathSec,
+      Value<int>? cooldownWindowSec,
       Value<int>? rowid}) {
     return AppRestrictionTableCompanion(
       appPackage: appPackage ?? this.appPackage,
@@ -489,6 +569,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
       associatedGroupId: associatedGroupId ?? this.associatedGroupId,
       canAccessInternet: canAccessInternet ?? this.canAccessInternet,
       reminderType: reminderType ?? this.reminderType,
+      cooldownBreathSec: cooldownBreathSec ?? this.cooldownBreathSec,
+      cooldownWindowSec: cooldownWindowSec ?? this.cooldownWindowSec,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -530,6 +612,12 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
           .$converterreminderType
           .toSql(reminderType.value));
     }
+    if (cooldownBreathSec.present) {
+      map['cooldown_breath_sec'] = Variable<int>(cooldownBreathSec.value);
+    }
+    if (cooldownWindowSec.present) {
+      map['cooldown_window_sec'] = Variable<int>(cooldownWindowSec.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -548,6 +636,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
           ..write('associatedGroupId: $associatedGroupId, ')
           ..write('canAccessInternet: $canAccessInternet, ')
           ..write('reminderType: $reminderType, ')
+          ..write('cooldownBreathSec: $cooldownBreathSec, ')
+          ..write('cooldownWindowSec: $cooldownWindowSec, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6047,6 +6137,8 @@ typedef $$AppRestrictionTableTableCreateCompanionBuilder
   Value<int?> associatedGroupId,
   Value<bool> canAccessInternet,
   Value<ReminderType> reminderType,
+  Value<int> cooldownBreathSec,
+  Value<int> cooldownWindowSec,
   Value<int> rowid,
 });
 typedef $$AppRestrictionTableTableUpdateCompanionBuilder
@@ -6060,6 +6152,8 @@ typedef $$AppRestrictionTableTableUpdateCompanionBuilder
   Value<int?> associatedGroupId,
   Value<bool> canAccessInternet,
   Value<ReminderType> reminderType,
+  Value<int> cooldownBreathSec,
+  Value<int> cooldownWindowSec,
   Value<int> rowid,
 });
 
@@ -6107,6 +6201,14 @@ class $$AppRestrictionTableTableFilterComposer
       get reminderType => $composableBuilder(
           column: $table.reminderType,
           builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<int> get cooldownBreathSec => $composableBuilder(
+      column: $table.cooldownBreathSec,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get cooldownWindowSec => $composableBuilder(
+      column: $table.cooldownWindowSec,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$AppRestrictionTableTableOrderingComposer
@@ -6150,6 +6252,14 @@ class $$AppRestrictionTableTableOrderingComposer
   ColumnOrderings<String> get reminderType => $composableBuilder(
       column: $table.reminderType,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cooldownBreathSec => $composableBuilder(
+      column: $table.cooldownBreathSec,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cooldownWindowSec => $composableBuilder(
+      column: $table.cooldownWindowSec,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$AppRestrictionTableTableAnnotationComposer
@@ -6190,6 +6300,12 @@ class $$AppRestrictionTableTableAnnotationComposer
   GeneratedColumnWithTypeConverter<ReminderType, String> get reminderType =>
       $composableBuilder(
           column: $table.reminderType, builder: (column) => column);
+
+  GeneratedColumn<int> get cooldownBreathSec => $composableBuilder(
+      column: $table.cooldownBreathSec, builder: (column) => column);
+
+  GeneratedColumn<int> get cooldownWindowSec => $composableBuilder(
+      column: $table.cooldownWindowSec, builder: (column) => column);
 }
 
 class $$AppRestrictionTableTableTableManager extends RootTableManager<
@@ -6230,6 +6346,8 @@ class $$AppRestrictionTableTableTableManager extends RootTableManager<
             Value<int?> associatedGroupId = const Value.absent(),
             Value<bool> canAccessInternet = const Value.absent(),
             Value<ReminderType> reminderType = const Value.absent(),
+            Value<int> cooldownBreathSec = const Value.absent(),
+            Value<int> cooldownWindowSec = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AppRestrictionTableCompanion(
@@ -6242,6 +6360,8 @@ class $$AppRestrictionTableTableTableManager extends RootTableManager<
             associatedGroupId: associatedGroupId,
             canAccessInternet: canAccessInternet,
             reminderType: reminderType,
+            cooldownBreathSec: cooldownBreathSec,
+            cooldownWindowSec: cooldownWindowSec,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -6254,6 +6374,8 @@ class $$AppRestrictionTableTableTableManager extends RootTableManager<
             Value<int?> associatedGroupId = const Value.absent(),
             Value<bool> canAccessInternet = const Value.absent(),
             Value<ReminderType> reminderType = const Value.absent(),
+            Value<int> cooldownBreathSec = const Value.absent(),
+            Value<int> cooldownWindowSec = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AppRestrictionTableCompanion.insert(
@@ -6266,6 +6388,8 @@ class $$AppRestrictionTableTableTableManager extends RootTableManager<
             associatedGroupId: associatedGroupId,
             canAccessInternet: canAccessInternet,
             reminderType: reminderType,
+            cooldownBreathSec: cooldownBreathSec,
+            cooldownWindowSec: cooldownWindowSec,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

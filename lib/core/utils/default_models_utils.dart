@@ -95,6 +95,9 @@ const defaultAppRestrictionModel = AppRestriction(
   periodDurationInMins: 0,
   canAccessInternet: true,
   reminderType: ReminderType.toast,
+  // FORK: 0 means the cooldown gate is off for this app
+  cooldownBreathSec: 0,
+  cooldownWindowSec: 120,
 );
 
 final defaultFocusModeModel = FocusMode(

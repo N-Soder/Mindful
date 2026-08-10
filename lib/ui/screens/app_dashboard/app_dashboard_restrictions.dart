@@ -160,6 +160,64 @@ class AppDashboardRestrictions extends ConsumerWidget {
           ),
         ).sliver,
 
+        /// FORK: Cooldown gate — breathing pause before the app opens
+        DefaultDropdownTile<int>(
+          value: restriction.cooldownBreathSec,
+          enabled: !appInfo.isImpSysApp,
+          position: ItemPosition.mid,
+          leadingIcon: FluentIcons.timer_20_regular,
+          dialogIcon: FluentIcons.timer_20_filled,
+          titleText: context.locale.cooldown_tile_title,
+          infoText: context.locale.cooldown_dialog_info,
+          onSelected: (seconds) => ref
+              .read(appsRestrictionsProvider.notifier)
+              .updateAppCooldown(appInfo.packageName, seconds),
+          items: [
+            DefaultDropdownItem(
+              label: context.locale.cooldown_status_off,
+              value: 0,
+            ),
+            ...[3, 5, 7, 10, 15, 30].map(
+              (s) => DefaultDropdownItem(
+                label: context.locale.cooldown_seconds_label(s),
+                value: s,
+              ),
+            ),
+          ],
+        ).sliver,
+
+        /// FORK: How long the app stays open-able after continuing.
+        /// Only meaningful while the gate is on.
+        SliverAnimatedPaintExtent(
+          duration: 500.ms,
+          child: SliverVisibility(
+            visible: restriction.cooldownBreathSec > 0,
+            sliver: DefaultDropdownTile<int>(
+              value: restriction.cooldownWindowSec,
+              position: ItemPosition.mid,
+              leadingIcon: FluentIcons.hourglass_20_regular,
+              dialogIcon: FluentIcons.hourglass_20_filled,
+              titleText: context.locale.cooldown_window_tile_title,
+              infoText: context.locale.cooldown_window_tile_subtitle,
+              onSelected: (seconds) => ref
+                  .read(appsRestrictionsProvider.notifier)
+                  .updateAppCooldownWindow(appInfo.packageName, seconds),
+              items: [
+                DefaultDropdownItem(
+                  label: context.locale.cooldown_seconds_label(30),
+                  value: 30,
+                ),
+                ...[1, 2, 5, 10].map(
+                  (m) => DefaultDropdownItem(
+                    label: context.locale.cooldown_minutes_label(m),
+                    value: m * 60,
+                  ),
+                ),
+              ],
+            ).sliver,
+          ),
+        ),
+
         /// Active period
         DefaultExpandableListTile(
           enabled: !appInfo.isImpSysApp,

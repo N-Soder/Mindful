@@ -54,4 +54,13 @@ class AppRestrictionTable extends Table {
   /// [ReminderType] Type of reminders to show when using timed app
   TextColumn get reminderType =>
       textEnum<ReminderType>().withDefault(Constant(ReminderType.toast.name))();
+
+  /// FORK: Length of the breathing pause shown before this app opens, in SECONDS.
+  /// Zero disables the cooldown gate for this app.
+  IntColumn get cooldownBreathSec => integer().withDefault(const Constant(0))();
+
+  /// FORK: How long the app stays open-able after choosing to continue, in SECONDS.
+  /// Stops app-switching from re-triggering the gate constantly.
+  IntColumn get cooldownWindowSec =>
+      integer().withDefault(const Constant(120))();
 }
