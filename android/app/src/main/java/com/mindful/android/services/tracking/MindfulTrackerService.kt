@@ -37,6 +37,13 @@ class MindfulTrackerService : Service() {
             onNewAppLaunched = ::onNewAppLaunch,
             dismissOverlay = { overlayManager.dismissSheetOverlay() },
             cancelReminders = { reminderManager.cancelReminders() },
+            /// FORK: Re-assert a cooldown gate that was swiped away unanswered.
+            /// Gated on the overlay being absent, otherwise the gate would restart
+            /// on every poll while the user is still looking at it.
+            shouldReInvokeSamePackage = { packageName ->
+                restrictionManager.isCooldownPending(packageName)
+                        && !overlayManager.isShowingOverlay
+            },
         )
         super.onCreate()
     }
@@ -94,6 +101,9 @@ class MindfulTrackerService : Service() {
                         packageName = packageName,
                         restrictionState = it,
                         onBackOut = {
+                            /// Answered, so stop re-asserting the gate
+                            restrictionManager.clearPendingCooldown()
+
                             /// Same approach as the block overlay's "Close app" button
                             val homeIntent = Intent(Intent.ACTION_MAIN).apply {
                                 addCategory(Intent.CATEGORY_HOME)

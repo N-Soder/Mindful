@@ -20,6 +20,15 @@ class RestrictionManager(
 ) {
     private val TAG = "Mindful.RestrictionManager"
 
+    companion object {
+        /// FORK: How long an unanswered cooldown gate stays pending.
+        private const val PENDING_COOLDOWN_TTL_MS = 2 * 60 * 1000L
+    }
+
+    /// FORK: The app whose gate is showing or was swiped away unanswered
+    private var pendingCooldownPackage: String? = null
+    private var pendingCooldownAt: Long = 0L
+
     val isIdle: Boolean
         get() = focusedApps.isEmpty()
                 && bedtimeApps.isEmpty()
@@ -229,6 +238,11 @@ class RestrictionManager(
         val screenTimeTodaySec =
             ScreenUsageHelper.fetchAppUsageTodayTillNow(usageStatsManager)[packageName] ?: 0L
 
+        // Remember that this app is awaiting an answer, so swiping the gate away and
+        // returning re-shows it instead of silently letting the app through.
+        pendingCooldownPackage = packageName
+        pendingCooldownAt = System.currentTimeMillis()
+
         Log.d(TAG, "evaluateCooldown: Gating $packageName (attempts=$attempts)")
         return RestrictionState(
             type = RestrictionType.COOLDOWN,
@@ -246,6 +260,28 @@ class RestrictionManager(
     fun grantCooldownWindow(packageName: String) {
         val windowSec = appsRestrictions[packageName]?.cooldownWindowSec ?: 120
         CooldownStore.grantWindow(context, packageName, windowSec)
+        clearPendingCooldown()
+    }
+
+    /**
+     * FORK: True when [packageName] was gated but the user never answered — they swiped
+     * away instead. Used to re-assert the overlay when they come back.
+     *
+     * Android won't let an app block the home gesture, so the gate can always be swiped
+     * past. This makes leaving *postpone* access rather than grant it.
+     *
+     * Expires after [PENDING_COOLDOWN_TTL_MS]. The expiry matters: launch tracking infers
+     * the foreground app from usage events and can hold a stale entry if a pause event is
+     * missed, so an unbounded pending flag could re-show the gate over the wrong screen.
+     */
+    fun isCooldownPending(packageName: String): Boolean =
+        pendingCooldownPackage == packageName &&
+                (System.currentTimeMillis() - pendingCooldownAt) < PENDING_COOLDOWN_TTL_MS
+
+    /** FORK: Called once the user has actually answered the gate, either way. */
+    fun clearPendingCooldown() {
+        pendingCooldownPackage = null
+        pendingCooldownAt = 0L
     }
 
     private fun evaluateScreenTimeLimit(

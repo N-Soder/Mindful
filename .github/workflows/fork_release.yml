@@ -48,14 +48,35 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Resolve NDK path
+        # ANDROID_HOME is set in the runner's environment, which is NOT in the `env`
+        # expression context — ${{ env.ANDROID_HOME }} would expand to empty. Writing it
+        # to $GITHUB_ENV here does put it in the context for later steps.
+        run: echo "NDK_PATH=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Cache NDK
+        # The NDK is a ~2.4GB download and dominates the run time. Keyed on the exact
+        # version, so bumping NDK_VERSION misses the cache and reinstalls, as it should.
+        id: ndk-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NDK_PATH }}
+          key: ndk-${{ runner.os }}-${{ env.NDK_VERSION }}
+
       - name: Install NDK ${{ env.NDK_VERSION }}
         # Required: AGP 8.10.1 defaults to this exact version and android/app/build.gradle
         # pins it. AGP's own auto-download leaves a stub with no source.properties and
         # fails with [CXX1101], so install it explicitly.
+        if: steps.ndk-cache.outputs.cache-hit != 'true'
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${NDK_VERSION}"
+
+      - name: Verify NDK
+        # Checked on cache hits too: a truncated cache restore would otherwise surface
+        # much later as a confusing [CXX1101] Gradle failure.
+        run: |
           test -f "$ANDROID_HOME/ndk/${NDK_VERSION}/source.properties" \
-            || { echo "::error::NDK install incomplete"; exit 1; }
+            || { echo "::error::NDK missing or incomplete at $ANDROID_HOME/ndk/${NDK_VERSION}"; exit 1; }
 
       - name: Resolve version
         id: version

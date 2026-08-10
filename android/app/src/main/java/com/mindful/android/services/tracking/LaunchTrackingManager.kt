@@ -21,6 +21,16 @@ class LaunchTrackingManager(
     private val onNewAppLaunched: (packageName: String) -> Unit,
     private val dismissOverlay: () -> Unit,
     private val cancelReminders: () -> Unit,
+    /**
+     * FORK: Consulted when the foreground app hasn't changed since the last check.
+     *
+     * Returning true re-fires the launch event anyway. This exists because a user can
+     * swipe the cooldown gate away and return to the app without the foreground package
+     * ever changing from this tracker's point of view, which would otherwise let them
+     * straight in. Must return false while the overlay is already showing, or the gate
+     * would restart every poll.
+     */
+    private val shouldReInvokeSamePackage: (packageName: String) -> Boolean = { false },
 ) {
     companion object {
         private const val TAG = "Mindful.LaunchTrackingManager"
@@ -133,7 +143,15 @@ class LaunchTrackingManager(
         }
 
         activeApps.firstOrNull()?.let {
-            if (lastLaunchedApp == it) return
+            if (lastLaunchedApp == it) {
+                // FORK: Same app still in front. Normally nothing to do, but an
+                // unanswered cooldown gate needs re-asserting — see the constructor doc.
+                if (shouldReInvokeSamePackage(it)) {
+                    Log.d(TAG, "findLaunchedApp: Re-asserting gate for $it")
+                    invokeNewAppLaunched(it)
+                }
+                return
+            }
             invokeNewAppLaunched(it)
         }
         Log.d(TAG, "findLaunchedApp: Opened app:$lastLaunchedApp Active apps: $activeApps ")

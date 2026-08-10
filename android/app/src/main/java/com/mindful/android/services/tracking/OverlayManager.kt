@@ -41,6 +41,9 @@ class OverlayManager(
 
 
     /// Animate out the overlay
+    /** FORK: True while any overlay is on screen. */
+    val isShowingOverlay: Boolean get() = overlays.isNotEmpty()
+
     fun dismissSheetOverlay() {
         overlays.pollFirst()?.let { sheetOverlay ->
             ThreadUtils.runOnMainThread {
