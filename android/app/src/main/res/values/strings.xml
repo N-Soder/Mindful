@@ -79,7 +79,6 @@
     <string name="notification_schedule_batch_summery" comment="Number of notifications as placeholder" formatted="true">You have %d unread notifications while you were away. They’ll be marked as read after 24 hours.</string>
 
     <!-- FORK: Cooldown gate -->
-    <string name="cooldown_breath_prompt">No rush.</string>
     <string name="app_paused_restriction_cooldown">Cooldown</string>
     <string name="cooldown_label_opens">Opens · last 24h</string>
     <string name="cooldown_label_today" comment="App name as placeholder. ex: 'On Instagram today'" formatted="true">On %s today</string>

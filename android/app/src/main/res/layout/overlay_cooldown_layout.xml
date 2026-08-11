@@ -21,28 +21,22 @@
         android:layout_height="match_parent">
 
         <!--
-          ~ Full-bleed wash. Scaled and faded by OverlayBuilder rather than a discrete
-          ~ circle, so the breath reads as the whole screen moving.
+          ~ The breathing wash. Deliberately a fixed 480dp SQUARE rather than match_parent:
+          ~ the gradient has to finish inside the view's own bounds, otherwise the shape
+          ~ clips it and you see a hard edge instead of a soft circle. A square also keeps
+          ~ it circular — on a match_parent view the oval stretches to the screen's aspect
+          ~ ratio and reads as an egg.
+          ~
+          ~ Oversized on purpose so its edges sit off-screen at every point in the
+          ~ animation. Scale range in OverlayBuilder is tuned to this size.
           -->
         <View
             android:id="@+id/cooldown_breath_wash"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.16"
-            android:background="@drawable/shape_radial_wash" />
-
-        <TextView
-            android:id="@+id/cooldown_breath_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="480dp"
+            android:layout_height="480dp"
             android:layout_gravity="center"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            android:gravity="center"
-            android:text="@string/cooldown_breath_prompt"
-            android:textColor="@color/textPrimary"
-            android:textSize="30sp"
-            android:textStyle="bold" />
+            android:alpha="0.14"
+            android:background="@drawable/shape_radial_wash" />
     </FrameLayout>
 
     <!-- Phase 2: the numbers, then the choice -->
@@ -73,56 +67,63 @@
                 android:id="@+id/cooldown_label_opens"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.1"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
                 android:text="@string/cooldown_label_opens"
                 android:textAllCaps="true"
                 android:textColor="@color/textSecondary"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/cooldown_attempts_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="-0.03"
                 android:textColor="@color/textPrimary"
-                android:textSize="56sp" />
+                android:textSize="68sp" />
 
             <TextView
                 android:id="@+id/cooldown_label_today"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
-                android:letterSpacing="0.1"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
                 android:textAllCaps="true"
                 android:textColor="@color/textSecondary"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/cooldown_value_today"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
                 android:textColor="@color/textPrimary"
-                android:textSize="17sp" />
+                android:textSize="20sp" />
 
             <TextView
                 android:id="@+id/cooldown_label_last_open"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
-                android:letterSpacing="0.1"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
                 android:text="@string/cooldown_label_last_open"
                 android:textAllCaps="true"
                 android:textColor="@color/textSecondary"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/cooldown_value_last_open"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
                 android:textColor="@color/textPrimary"
-                android:textSize="17sp" />
+                android:textSize="20sp" />
         </LinearLayout>
 
         <!-- The way out is prominent; continuing is deliberately quiet. -->
@@ -144,7 +145,8 @@
                 android:text="@string/cooldown_btn_not_now"
                 android:textAllCaps="false"
                 android:textColor="@color/secondaryContainer"
-                android:textSize="16sp" />
+                android:fontFamily="sans-serif-medium"
+                android:textSize="17sp" />
 
             <Button
                 android:id="@+id/cooldown_btn_continue"
@@ -154,7 +156,8 @@
                 android:background="@android:color/transparent"
                 android:textAllCaps="false"
                 android:textColor="@color/accent"
-                android:textSize="15sp" />
+                android:fontFamily="sans-serif-medium"
+                android:textSize="16sp" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

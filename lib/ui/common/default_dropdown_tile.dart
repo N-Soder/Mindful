@@ -183,7 +183,15 @@ class _DropdownMenuDialogState<T> extends State<_DropdownMenuDialog<T>> {
                         /// Info
                         if (widget.info != null)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 18),
+                            /// FORK: The horizontal and top insets keep the first
+                            /// character clear of the enclosing ClipRRect's 24px corner,
+                            /// which otherwise slices the top-left of the first letter.
+                            padding: const EdgeInsets.only(
+                              left: 10,
+                              right: 10,
+                              top: 8,
+                              bottom: 18,
+                            ),
                             child: StyledText(
                               widget.info!,
                             ),

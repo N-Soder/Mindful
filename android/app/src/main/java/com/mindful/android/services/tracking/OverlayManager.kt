@@ -127,9 +127,12 @@ class OverlayManager(
                     overlays.push(it)
                     Utils.vibrateDevice(context, 50L)
 
-                    // Fade the whole gate in; the breathing animation starts itself
-                    it.alpha = 0f
-                    it.animate().alpha(1f).setDuration(400).start()
+                    // FORK: Deliberately NOT faded in. The gate's job is to cover the app,
+                    // and the overlay background is opaque — so a 400ms fade meant 400ms
+                    // of the app being readable through it, on top of the delay before
+                    // launch detection fires. It now covers instantly and the breathing
+                    // animation carries the softness.
+                    it.alpha = 1f
                 }
             }.getOrElse {
                 SharedPrefsHelper.insertCrashLogToPrefs(context, it)

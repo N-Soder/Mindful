@@ -25,29 +25,22 @@ object OverlayBuilder {
     /**
      * FORK: Scale the breathing wash starts (and returns to) on the exhale.
      *
-     * Tuned for a full-bleed gradient rather than a discrete circle: the view already
-     * fills the screen, so the range is much narrower than it would be for a shape.
-     * Scaling this far would push most of the falloff off-screen.
+     * Tuned to the layout's fixed 480dp wash and its 220dp gradient radius: at every
+     * point in this range the gradient still completes inside the view's bounds, so the
+     * shape never clips it into a visible edge, while the view's own edges stay
+     * off-screen. Changing the view size or the gradient radius means retuning these.
      */
-    private const val EXHALE_SCALE = 0.8f
+    private const val EXHALE_SCALE = 0.9f
 
     /** FORK: Scale the breathing wash reaches at the peak of the inhale. */
-    private const val INHALE_SCALE = 1.35f
+    private const val INHALE_SCALE = 1.9f
 
     /** FORK: Wash opacity at rest and at the peak of the inhale. */
-    private const val EXHALE_ALPHA = 0.16f
-    private const val INHALE_ALPHA = 0.44f
+    private const val EXHALE_ALPHA = 0.14f
+    private const val INHALE_ALPHA = 0.42f
 
     /** FORK: Duration of the breath → info cross-fade, in millis. */
     private const val CROSSFADE_MS = 450L
-
-    /**
-     * FORK: Delay before the breath starts, matching the window's own fade-in.
-     *
-     * Without it the circle's scale animation runs at the same time as the overlay
-     * fading in, and the two competing animations are visibly rough on the first frames.
-     */
-    private const val BREATH_START_DELAY_MS = 260L
 
     @MainThread
     fun buildToastOverlay(
@@ -198,7 +191,6 @@ object OverlayBuilder {
             .scaleX(INHALE_SCALE).scaleY(INHALE_SCALE)
             .alpha(INHALE_ALPHA)
             .setInterpolator(interpolator)
-            .setStartDelay(BREATH_START_DELAY_MS)
             .setDuration(halfMs)
             .withEndAction {
                 // Exhale
