@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ FORK: Soft radial falloff for the cooldown gate's breathing phase.
+  ~
+  ~ A rectangle rather than an oval so it fills the screen edge to edge, with the falloff
+  ~ doing the shaping. Centred slightly above the middle so the copy sits in the densest
+  ~ part of the wash rather than below it.
+  ~
+  ~ Uses @color/accent directly, so it inherits the Material You palette from
+  ~ values-v31/colors.xml on API 31+. Tinting is deliberately avoided — backgroundTint
+  ~ applies flatly and would destroy the gradient.
+  -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="radial"
+        android:centerX="0.5"
+        android:centerY="0.46"
+        android:gradientRadius="58%p"
+        android:startColor="@color/accent"
+        android:endColor="@android:color/transparent" />
+</shape>

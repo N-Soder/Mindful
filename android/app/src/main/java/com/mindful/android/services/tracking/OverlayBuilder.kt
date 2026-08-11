@@ -22,15 +22,21 @@ import com.mindful.android.utils.MindfulQuotes
 import com.mindful.android.utils.ThreadUtils
 
 object OverlayBuilder {
-    /** FORK: Scale the breathing circle starts (and returns to) on the exhale. */
-    private const val EXHALE_SCALE = 0.72f
+    /**
+     * FORK: Scale the breathing wash starts (and returns to) on the exhale.
+     *
+     * Tuned for a full-bleed gradient rather than a discrete circle: the view already
+     * fills the screen, so the range is much narrower than it would be for a shape.
+     * Scaling this far would push most of the falloff off-screen.
+     */
+    private const val EXHALE_SCALE = 0.8f
 
-    /** FORK: Scale the breathing circle reaches at the peak of the inhale. */
-    private const val INHALE_SCALE = 1.8f
+    /** FORK: Scale the breathing wash reaches at the peak of the inhale. */
+    private const val INHALE_SCALE = 1.35f
 
-    /** FORK: Circle opacity at rest and at the peak of the inhale. */
-    private const val EXHALE_ALPHA = 0.22f
-    private const val INHALE_ALPHA = 0.55f
+    /** FORK: Wash opacity at rest and at the peak of the inhale. */
+    private const val EXHALE_ALPHA = 0.16f
+    private const val INHALE_ALPHA = 0.44f
 
     /** FORK: Duration of the breath → info cross-fade, in millis. */
     private const val CROSSFADE_MS = 450L
@@ -110,44 +116,42 @@ object OverlayBuilder {
         val (appName, _) = getAppLabelAndIcon(context, packageName)
 
         // ---- Phase 2 content, populated up front so it's ready to fade in ----
+        // Every value carries its own label, so no number is ambiguous about what it counts.
         root.findViewById<TextView>(R.id.cooldown_attempts_count).text =
             state.launchAttempts24h.coerceAtLeast(1).toString()
 
-        root.findViewById<TextView>(R.id.cooldown_attempts_label).text =
-            context.getString(R.string.cooldown_attempts_label, appName)
-
-        // Minutes on the app so far today
-        val screenTimeTxt = root.findViewById<TextView>(R.id.cooldown_screen_time_today)
+        // Time on the app so far today
+        val todayLabel = root.findViewById<TextView>(R.id.cooldown_label_today)
+        val todayValue = root.findViewById<TextView>(R.id.cooldown_value_today)
         if (state.screenTimeUsed > 0) {
-            val usedMins = (state.screenTimeUsed / 60).toInt()
-            screenTimeTxt.text = context.getString(
-                R.string.cooldown_screen_time_today,
-                DateTimeUtils.minutesToTimeStr(usedMins)
-            )
+            todayLabel.text = context.getString(R.string.cooldown_label_today, appName)
+            todayValue.text =
+                DateTimeUtils.minutesToTimeStr((state.screenTimeUsed / 60).toInt())
         } else {
-            screenTimeTxt.visibility = View.GONE
+            // Hide the pair rather than showing a bare "0m" for an app not yet used today
+            todayLabel.visibility = View.GONE
+            todayValue.visibility = View.GONE
         }
 
         // How long since the previous session ended
-        val lastUseTxt = root.findViewById<TextView>(R.id.cooldown_last_use)
+        val lastOpenValue = root.findViewById<TextView>(R.id.cooldown_value_last_open)
         if (state.lastUsedMillis > 0) {
             val elapsedMins =
                 ((System.currentTimeMillis() - state.lastUsedMillis) / 60_000L).toInt()
-            lastUseTxt.text = context.getString(
-                R.string.cooldown_last_use,
+            lastOpenValue.text = context.getString(
+                R.string.cooldown_value_ago,
                 DateTimeUtils.minutesToTimeStr(elapsedMins.coerceAtLeast(1))
             )
         } else {
-            lastUseTxt.text = context.getString(R.string.cooldown_last_use_unknown)
+            lastOpenValue.text = context.getString(R.string.cooldown_value_not_recently)
         }
 
         // ---- Actions ----
         val backOutBtn = root.findViewById<Button>(R.id.cooldown_btn_dismiss)
-        backOutBtn.text = context.getString(R.string.cooldown_btn_dismiss, appName)
         backOutBtn.setOnClickListener { ThreadUtils.runOnMainThread { onBackOut.invoke() } }
 
         val continueBtn = root.findViewById<Button>(R.id.cooldown_btn_continue)
-        continueBtn.text = context.getString(R.string.cooldown_btn_continue, appName)
+        continueBtn.text = context.getString(R.string.cooldown_btn_open, appName)
         continueBtn.setOnClickListener { ThreadUtils.runOnMainThread { onContinue.invoke() } }
 
         // ---- Phase 1: breathe, then reveal ----
@@ -166,7 +170,7 @@ object OverlayBuilder {
      */
     private fun animateBreathThenReveal(root: View, breathSec: Int) {
         val breathPanel = root.findViewById<View>(R.id.cooldown_breath_panel)
-        val circle = root.findViewById<View>(R.id.cooldown_breath_circle)
+        val circle = root.findViewById<View>(R.id.cooldown_breath_wash)
         val infoPanel = root.findViewById<View>(R.id.cooldown_info_panel)
 
         // Guard against a zero/negative configured duration reaching the animator
@@ -174,12 +178,13 @@ object OverlayBuilder {
         val halfMs = totalMs / 2
 
         // Promote to a hardware layer for the duration of the breath. Without this the
-        // circle's background drawable is re-rasterized on every frame as it scales,
-        // which is what makes a large slow scale look rough. On a hardware layer the
-        // GPU just transforms a cached texture, so scale and alpha are near-free.
+        // wash's gradient drawable is re-rasterized on every frame as it scales, which
+        // is what makes a large slow scale look rough — and a full-bleed radial gradient
+        // is considerably more expensive to redraw than the circle it replaced. On a
+        // hardware layer the GPU just transforms a cached texture, so this is near-free.
         circle.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
-        // Start small so the growth is pronounced rather than a subtle throb
+        // Start contracted so the growth is pronounced rather than a subtle throb
         circle.scaleX = EXHALE_SCALE
         circle.scaleY = EXHALE_SCALE
         circle.alpha = EXHALE_ALPHA
